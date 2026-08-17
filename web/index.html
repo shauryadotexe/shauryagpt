@@ -429,6 +429,20 @@
   }
   inputEl.addEventListener('input', autoResize);
 
+  async function fetchChat(text) {
+    const res = await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': ACCESS_TOKEN
+      },
+      body: JSON.stringify({ message: text, history: history.slice(-12), user_id: USER_ID })
+    });
+    return res;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
   async function send() {
     const text = inputEl.value.trim();
     if (!text) return;
@@ -442,40 +456,46 @@
     setThinking(true);
     showTyping();
 
-    try {
-      const res = await fetch(API_BASE + '/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-token': ACCESS_TOKEN
-        },
-        body: JSON.stringify({ message: text, history: history.slice(-12), user_id: USER_ID })
-      });
-      const data = await res.json();
-      hideTyping();
+    // Free-tier backends (Render etc.) can be asleep and refuse the very
+    // first request outright. Retry a couple of times with backoff before
+    // showing an error — makes cold starts invisible instead of a dead end.
+    const MAX_ATTEMPTS = 3;
+    let res, data, lastError;
 
-      if (!res.ok) {
-        renderBubble('assistant', "something broke — try again in a sec");
-      } else {
-        renderBubble('assistant', data.reply);
-        history.push({ role: 'assistant', content: data.reply });
-        history = history.slice(-12);
-        sessionStorage.setItem('sgpt_history', JSON.stringify(history));
-
-        if (data.remaining_today !== null && data.remaining_today <= 5) {
-          limitBanner.style.display = 'block';
-          limitBanner.textContent = data.remaining_today === 0
-            ? "out of free messages for today — back tomorrow"
-            : `${data.remaining_today} free messages left today`;
-        } else {
-          limitBanner.style.display = 'none';
-        }
-
-        tierBadge.textContent = data.remaining_today === null ? 'Pro' : '1.0';
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        res = await fetchChat(text);
+        data = await res.json();
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+        if (attempt < MAX_ATTEMPTS) await sleep(attempt * 2000); // 2s, then 4s
       }
-    } catch (e) {
-      hideTyping();
-      renderBubble('assistant', "can't reach the server right now");
+    }
+
+    hideTyping();
+
+    if (lastError) {
+      renderBubble('assistant', "can't reach the server right now — try again in a bit");
+    } else if (!res.ok) {
+      renderBubble('assistant', "something broke — try again in a sec");
+    } else {
+      renderBubble('assistant', data.reply);
+      history.push({ role: 'assistant', content: data.reply });
+      history = history.slice(-12);
+      sessionStorage.setItem('sgpt_history', JSON.stringify(history));
+
+      if (data.remaining_today !== null && data.remaining_today <= 5) {
+        limitBanner.style.display = 'block';
+        limitBanner.textContent = data.remaining_today === 0
+          ? "out of free messages for today — back tomorrow"
+          : `${data.remaining_today} free messages left today`;
+      } else {
+        limitBanner.style.display = 'none';
+      }
+
+      tierBadge.textContent = data.remaining_today === null ? 'Pro' : '1.0';
     }
 
     setThinking(false);
