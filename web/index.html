@@ -89,39 +89,97 @@
   }
 
   header {
-    padding: calc(14px + var(--safe-top)) 20px 14px;
-    display: flex; align-items: center; gap: 12px;
+    padding: calc(12px + var(--safe-top)) 16px 12px;
+    display: flex; align-items: center; gap: 10px;
     background: linear-gradient(to bottom, rgba(18,14,28,0.9), rgba(18,14,28,0.0));
     backdrop-filter: blur(6px);
   }
-  .avatar {
+  .icon-btn {
     width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: var(--text-warm);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, var(--glow-amber), var(--glow-lavender) 75%);
-    box-shadow: 0 0 18px rgba(242,166,90,0.45);
+    box-shadow: 0 0 14px rgba(242,166,90,0.45);
     flex-shrink: 0;
   }
-  .header-text h1 {
+  .header-title {
+    flex: 1;
+    display: flex; align-items: center; gap: 6px;
+    min-width: 0;
+  }
+  .header-title h1 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
-    font-size: 19px;
+    font-size: 18px;
     margin: 0;
     letter-spacing: 0.2px;
+    white-space: nowrap;
   }
-  .header-text .status {
-    font-size: 12.5px;
+  .tier-badge {
+    font-size: 13.5px;
     color: var(--text-muted);
-    margin-top: 1px;
+    font-weight: 500;
   }
-  .status.online::before {
-    content: '';
-    display: inline-block;
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #7ee08c; margin-right: 5px;
+  .header-chevron {
+    width: 14px; height: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #7ee08c;
     box-shadow: 0 0 6px #7ee08c;
+    margin-left: 2px;
+    flex-shrink: 0;
+  }
+  .status-dot.thinking { background: var(--glow-amber); box-shadow: 0 0 6px var(--glow-amber); }
+
+  /* ---------- empty state ---------- */
+  #empty-state {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px;
+    padding: 0 40px;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #empty-state.hidden { opacity: 0; pointer-events: none; }
+  .empty-glow {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, var(--glow-amber), var(--glow-lavender) 75%);
+    filter: blur(1px);
+    box-shadow: 0 0 30px rgba(242,166,90,0.55), 0 0 60px rgba(183,159,224,0.35);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  #empty-state h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 26px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.3;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .empty-glow { animation: none !important; }
   }
 
   #messages {
     flex: 1; overflow-y: auto;
+    position: relative;
     padding: 8px 16px 12px;
     display: flex; flex-direction: column; gap: 10px;
     scroll-behavior: smooth;
@@ -189,24 +247,42 @@
   }
 
   #input-bar {
-    display: flex; align-items: flex-end; gap: 10px;
+    display: flex; align-items: center; gap: 8px;
     padding: 10px 14px calc(12px + var(--safe-bottom));
     background: linear-gradient(to top, rgba(18,14,28,0.95), rgba(18,14,28,0.0));
   }
+  .input-pill {
+    flex: 1;
+    display: flex; align-items: flex-end; gap: 8px;
+    padding: 6px 8px 6px 14px;
+    border-radius: 26px;
+    border: 1px solid rgba(183,159,224,0.22);
+    background: rgba(255,255,255,0.045);
+  }
+  .input-pill:focus-within { border-color: var(--glow-lavender); }
+  .pill-icon-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    cursor: default;
+    opacity: 0.55;
+  }
+  .pill-icon-btn svg { width: 17px; height: 17px; }
   #text-input {
     flex: 1;
     resize: none;
     max-height: 110px;
-    padding: 11px 16px;
-    border-radius: 20px;
-    border: 1px solid rgba(183,159,224,0.25);
-    background: rgba(255,255,255,0.04);
+    padding: 7px 0;
+    border: none;
+    background: transparent;
     color: var(--text-warm);
     font-family: inherit;
     font-size: 15px;
     outline: none;
   }
-  #text-input:focus { border-color: var(--glow-lavender); }
   #text-input::placeholder { color: var(--text-muted); }
 
   #send-btn {
@@ -235,18 +311,44 @@
 
 <div id="app">
   <header>
-    <div class="avatar"></div>
-    <div class="header-text">
-      <h1>Shaurya</h1>
-      <div class="status online" id="status-text">online</div>
+    <button class="icon-btn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </button>
+    <div class="header-title">
+      <h1>ShauryaGPT</h1>
+      <span class="tier-badge" id="tier-badge">1.0</span>
+      <svg class="header-chevron" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+      <span class="status-dot" id="status-dot"></span>
     </div>
+    <button class="icon-btn" id="new-chat-btn" aria-label="New chat">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+      </svg>
+    </button>
+    <div class="avatar"></div>
   </header>
 
-  <div id="messages"></div>
+  <div id="messages">
+    <div id="empty-state">
+      <div class="empty-glow"></div>
+      <h2>What's up, Anvi?</h2>
+    </div>
+  </div>
   <div id="limit-banner"></div>
 
   <div id="input-bar">
-    <textarea id="text-input" placeholder="Message" rows="1"></textarea>
+    <div class="input-pill">
+      <button class="pill-icon-btn" aria-label="Attach" tabindex="-1">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <textarea id="text-input" placeholder="Message Shaurya" rows="1"></textarea>
+    </div>
     <button id="send-btn" aria-label="Send">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 12L20 4L14 20L11 13L4 12Z" fill="#120e1c"/>
@@ -267,13 +369,25 @@
   const limitBanner = document.getElementById('limit-banner');
   const orbA = document.getElementById('orb-a');
   const orbB = document.getElementById('orb-b');
-  const statusText = document.getElementById('status-text');
+  const statusDot = document.getElementById('status-dot');
+  const tierBadge = document.getElementById('tier-badge');
+  const emptyState = document.getElementById('empty-state');
+  const newChatBtn = document.getElementById('new-chat-btn');
 
   let history = JSON.parse(sessionStorage.getItem('sgpt_history') || '[]');
   history.forEach(m => renderBubble(m.role, m.content, false));
+  if (history.length > 0) emptyState.classList.add('hidden');
   scrollToBottom();
 
+  newChatBtn.addEventListener('click', () => {
+    history = [];
+    sessionStorage.removeItem('sgpt_history');
+    document.querySelectorAll('.bubble-row').forEach(el => el.remove());
+    emptyState.classList.remove('hidden');
+  });
+
   function renderBubble(role, text, animate = true) {
+    emptyState.classList.add('hidden');
     const row = document.createElement('div');
     row.className = 'bubble-row ' + (role === 'user' ? 'mine' : 'his');
     const bubble = document.createElement('div');
@@ -304,7 +418,7 @@
   function setThinking(isThinking) {
     orbA.classList.toggle('thinking', isThinking);
     orbB.classList.toggle('thinking', isThinking);
-    statusText.textContent = isThinking ? 'typing…' : 'online';
+    statusDot.classList.toggle('thinking', isThinking);
   }
 
   function autoResize() {
@@ -354,6 +468,8 @@
         } else {
           limitBanner.style.display = 'none';
         }
+
+        tierBadge.textContent = data.remaining_today === null ? 'Pro' : '1.0';
       }
     } catch (e) {
       hideTyping();
