@@ -1,20 +1,21 @@
 """
 ShauryaGPT API server — the backend the Android/PWA app talks to.
 
-Keeps your ANTHROPIC_API_KEY on the server, never in the app itself.
+Keeps your GEMINI_API_KEY on the server, never in the app itself.
 Anvi's device only ever talks to this server over HTTPS.
 
 Run locally:
-    export ANTHROPIC_API_KEY=your_key_here
+    export GEMINI_API_KEY=your_key_here
     uvicorn api_server:app --host 0.0.0.0 --port 8000
 
-Deploy (pick one, all have free tiers that easily cover this workload):
+Deploy (pick one, free tiers cover this workload easily):
     - Render.com   -> New Web Service -> connect repo -> start command:
                       uvicorn api_server:app --host 0.0.0.0 --port $PORT
     - Railway.app  -> same idea, auto-detects the start command
     - Fly.io       -> fly launch, then fly deploy
-Set ANTHROPIC_API_KEY as an environment variable on whichever you pick —
-never commit it into the code.
+Set GEMINI_API_KEY as an environment variable on whichever you pick —
+never commit it into the code. Get a free key (no card needed) at
+https://aistudio.google.com/apikey
 """
 
 import os
@@ -24,7 +25,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from shauryagpt import ShauryaGPT
+from shauryagpt_gemini import ShauryaGPT
 
 # Simple shared-secret so random people who find the URL can't hit your API
 # and burn your Claude credits. Anvi's app sends this in every request.
