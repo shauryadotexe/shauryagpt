@@ -27,7 +27,14 @@ web/
   icon-192.png / icon-512.png — app icon (matches the app's glow theme)
 ```
 
-## 1. Deploy the backend
+## 1. Get a free Gemini API key
+
+No credit card needed. Go to https://aistudio.google.com/apikey, sign
+in with a Google account, click "Create API key." Free tier limits
+(roughly 10-15 requests/minute, a few hundred/day depending on the
+model) are far more than one person texting casually will hit.
+
+## 2. Deploy the backend
 
 Pick one (all have free tiers, this workload costs nothing on them):
 
@@ -36,7 +43,7 @@ Pick one (all have free tiers, this workload costs nothing on them):
 2. New → Web Service → connect the repo.
 3. Start command: `uvicorn api_server:app --host 0.0.0.0 --port $PORT`
 4. Add environment variables:
-   - `ANTHROPIC_API_KEY` = your key
+   - `GEMINI_API_KEY` = your free key from AI Studio
    - `APP_ACCESS_TOKEN` = make up a random string (this is the shared
      secret the app uses so randoms can't hit your API and burn credits)
 5. Deploy. You'll get a URL like `https://shauryagpt.onrender.com`.
