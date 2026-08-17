@@ -1,4 +1,4 @@
-const CACHE = "shauryagpt-v1";
+const CACHE = "shauryagpt-v5";
 const SHELL = ["index.html", "manifest.json", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -15,11 +15,19 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Cache-first for the app shell, network-only for /chat (never cache replies)
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (url.pathname.includes("/chat")) return; // let it hit the network
+  if (url.pathname.includes("/chat")) return; // always network, never cache replies
+
+  // Network-first for the app shell: always try to get the latest version.
+  // Only fall back to the cached copy if the network request fails (offline).
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    fetch(e.request)
+      .then((res) => {
+        const clone = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
