@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#14101f" />
+<title>ShauryaGPT</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-deep: #120e1c;
+    --bg-mid: #1c1530;
+    --bubble-mine: #262040;
+    --glow-amber: #f2a65a;
+    --glow-lavender: #b79fe0;
+    --text-warm: #ede6f5;
+    --text-muted: #8b84a3;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg-deep);
+    color: var(--text-warm);
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- ambient presence ---------- */
+  #presence-field {
+    position: fixed; inset: 0; z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.55;
+    transition: background 1.4s ease, opacity 1.4s ease;
+  }
+  .glow-orb.a {
+    width: 60vw; height: 60vw;
+    top: -18vw; left: -14vw;
+    background: radial-gradient(circle at 40% 40%, var(--glow-lavender), transparent 70%);
+    animation: drift-a 22s ease-in-out infinite;
+  }
+  .glow-orb.b {
+    width: 50vw; height: 50vw;
+    bottom: -16vw; right: -10vw;
+    background: radial-gradient(circle at 60% 60%, var(--glow-amber), transparent 70%);
+    animation: drift-b 26s ease-in-out infinite;
+  }
+  .glow-orb.thinking {
+    opacity: 0.85;
+  }
+  @keyframes drift-a {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(6vw, 8vw) scale(1.12); }
+  }
+  @keyframes drift-b {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-5vw, -6vw) scale(1.08); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glow-orb { animation: none !important; }
+  }
+
+  /* ---------- layout ---------- */
+  #app {
+    position: relative; z-index: 1;
+    height: 100%;
+    display: flex; flex-direction: column;
+  }
+
+  header {
+    padding: calc(14px + var(--safe-top)) 20px 14px;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(to bottom, rgba(18,14,28,0.9), rgba(18,14,28,0.0));
+    backdrop-filter: blur(6px);
+  }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--glow-amber), var(--glow-lavender) 75%);
+    box-shadow: 0 0 18px rgba(242,166,90,0.45);
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 19px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .header-text .status {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .status.online::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #7ee08c; margin-right: 5px;
+    box-shadow: 0 0 6px #7ee08c;
+  }
+
+  #messages {
+    flex: 1; overflow-y: auto;
+    padding: 8px 16px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .bubble-row { display: flex; }
+  .bubble-row.mine { justify-content: flex-end; }
+  .bubble-row.his { justify-content: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    animation: rise 0.25s ease;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .bubble-row.mine .bubble {
+    background: var(--bubble-mine);
+    border-bottom-right-radius: 6px;
+    color: var(--text-warm);
+  }
+  .bubble-row.his .bubble {
+    background: linear-gradient(135deg, rgba(242,166,90,0.16), rgba(183,159,224,0.16));
+    border: 1px solid rgba(242,166,90,0.25);
+    border-bottom-left-radius: 6px;
+    color: var(--text-warm);
+  }
+
+  .typing-row { display: flex; justify-content: flex-start; }
+  .typing-bubble {
+    padding: 12px 16px;
+    border-radius: 18px; border-bottom-left-radius: 6px;
+    background: linear-gradient(135deg, rgba(242,166,90,0.16), rgba(183,159,224,0.16));
+    border: 1px solid rgba(242,166,90,0.25);
+    display: flex; gap: 4px; align-items: center;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--glow-amber);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  #limit-banner {
+    margin: 6px 16px 0;
+    padding: 9px 14px;
+    border-radius: 12px;
+    background: rgba(242,166,90,0.12);
+    border: 1px solid rgba(242,166,90,0.3);
+    font-size: 12.5px;
+    color: var(--glow-amber);
+    text-align: center;
+    display: none;
+  }
+
+  #input-bar {
+    display: flex; align-items: flex-end; gap: 10px;
+    padding: 10px 14px calc(12px + var(--safe-bottom));
+    background: linear-gradient(to top, rgba(18,14,28,0.95), rgba(18,14,28,0.0));
+  }
+  #text-input {
+    flex: 1;
+    resize: none;
+    max-height: 110px;
+    padding: 11px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(183,159,224,0.25);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-warm);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+  }
+  #text-input:focus { border-color: var(--glow-lavender); }
+  #text-input::placeholder { color: var(--text-muted); }
+
+  #send-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--glow-amber), var(--glow-lavender));
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  #send-btn:active { transform: scale(0.92); }
+  #send-btn:disabled { opacity: 0.4; }
+  #send-btn svg { width: 18px; height: 18px; }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: rgba(183,159,224,0.2); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div id="presence-field">
+  <div class="glow-orb a" id="orb-a"></div>
+  <div class="glow-orb b" id="orb-b"></div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="avatar"></div>
+    <div class="header-text">
+      <h1>Shaurya</h1>
+      <div class="status online" id="status-text">online</div>
+    </div>
+  </header>
+
+  <div id="messages"></div>
+  <div id="limit-banner"></div>
+
+  <div id="input-bar">
+    <textarea id="text-input" placeholder="Message" rows="1"></textarea>
+    <button id="send-btn" aria-label="Send">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 12L20 4L14 20L11 13L4 12Z" fill="#120e1c"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  // ---- config: point this at your deployed backend ----
+  const API_BASE = window.SHAURYAGPT_API_BASE || "http://localhost:8000";
+  const ACCESS_TOKEN = window.SHAURYAGPT_ACCESS_TOKEN || "changeme";
+  const USER_ID = "anvi";
+
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('text-input');
+  const sendBtn = document.getElementById('send-btn');
+  const limitBanner = document.getElementById('limit-banner');
+  const orbA = document.getElementById('orb-a');
+  const orbB = document.getElementById('orb-b');
+  const statusText = document.getElementById('status-text');
+
+  let history = JSON.parse(sessionStorage.getItem('sgpt_history') || '[]');
+  history.forEach(m => renderBubble(m.role, m.content, false));
+  scrollToBottom();
+
+  function renderBubble(role, text, animate = true) {
+    const row = document.createElement('div');
+    row.className = 'bubble-row ' + (role === 'user' ? 'mine' : 'his');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    if (!animate) bubble.style.animation = 'none';
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'typing-row';
+    row.id = 'typing-indicator';
+    row.innerHTML = '<div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+    messagesEl.appendChild(row);
+    scrollToBottom();
+  }
+  function hideTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function setThinking(isThinking) {
+    orbA.classList.toggle('thinking', isThinking);
+    orbB.classList.toggle('thinking', isThinking);
+    statusText.textContent = isThinking ? 'typing…' : 'online';
+  }
+
+  function autoResize() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 110) + 'px';
+  }
+  inputEl.addEventListener('input', autoResize);
+
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    inputEl.value = '';
+    autoResize();
+    renderBubble('user', text);
+    history.push({ role: 'user', content: text });
+    scrollToBottom();
+
+    sendBtn.disabled = true;
+    setThinking(true);
+    showTyping();
+
+    try {
+      const res = await fetch(API_BASE + '/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': ACCESS_TOKEN
+        },
+        body: JSON.stringify({ message: text, history: history.slice(-12), user_id: USER_ID })
+      });
+      const data = await res.json();
+      hideTyping();
+
+      if (!res.ok) {
+        renderBubble('assistant', "something broke — try again in a sec");
+      } else {
+        renderBubble('assistant', data.reply);
+        history.push({ role: 'assistant', content: data.reply });
+        history = history.slice(-12);
+        sessionStorage.setItem('sgpt_history', JSON.stringify(history));
+
+        if (data.remaining_today !== null && data.remaining_today <= 5) {
+          limitBanner.style.display = 'block';
+          limitBanner.textContent = data.remaining_today === 0
+            ? "out of free messages for today — back tomorrow"
+            : `${data.remaining_today} free messages left today`;
+        } else {
+          limitBanner.style.display = 'none';
+        }
+      }
+    } catch (e) {
+      hideTyping();
+      renderBubble('assistant', "can't reach the server right now");
+    }
+
+    setThinking(false);
+    sendBtn.disabled = false;
+    scrollToBottom();
+  }
+
+  sendBtn.addEventListener('click', send);
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
